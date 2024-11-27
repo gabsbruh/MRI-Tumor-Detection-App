@@ -1,0 +1,166 @@
+QMainWindow.start_widget {
+    background-color: #000000; 
+    background-image: url('static/img/image_title.png'); 
+    background-repeat: no-repeat; 
+    background-position: center;
+}
+
+QMainWindow.default_widget, QMessageBox {
+    background-color: rgb(27, 27, 27); 
+    background-repeat: no-repeat; 
+    background-position: center;
+}
+
+QLabel {
+    font-family: Gill Sans, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #f0f0f0;
+    padding: 2px;
+}
+
+QPushButton {
+    background-color: green;
+    color: #ffffff;
+    border-radius: 10%;
+    border: none;
+    padding: 5px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: Gill Sans, sans-serif;
+    letter-spacing: 1px;
+    width: 100px;
+}
+
+QPushButton:hover {
+    background-color: rgb(0, 187, 0);
+}
+
+QLineEdit {
+    background-color: rgb(45, 106, 45);
+    border-color: rgb(13, 55, 13);
+    color: #ffffff;
+    font-family: Gill Sans, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 2px;
+    font-size: 14px;
+    font-family: Courier, monospace;
+}
+
+QTableView {
+    background: rgb(27, 27, 27); 
+    background-repeat: no-repeat; 
+    background-position: center;
+    font-family: Gill Sans, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #f0f0f0;
+    padding: 5px;
+    border-right: 3px solid rgb(13, 55, 13);
+    border: rgb(13, 55, 13);
+}
+
+QHeaderView::section, QTableCornerButton::section {
+    background: rgb(13, 55, 13); 
+    background-repeat: no-repeat; 
+    background-position: center;
+    font-family: Gill Sans, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #f0f0f0;
+    padding: 5px;
+    border-right: 3px solid rgb(13, 55, 13);
+    border: rgb(13, 55, 13);
+}
+
+QTableView::item:selected {
+    background: rgb(45, 106, 45);
+    border: rgb(13, 55, 13);         
+}
+
+QHeaderView::section:checked {
+    background: rgb(36, 84, 36);
+    border: rgb(13, 55, 13);
+}
+
+.tumor_detection {
+    font-size: 30px;
+    font-family: Courier, monospace;
+    font-weight: 700;
+    width: 100%;
+}
+
+#GRAD_CAM_BTN:checked {
+    background-color: qlineargradient(
+        spread:pad,
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgb(255, 87, 87)
+        stop:1 rgb(0, 204, 255)
+    );
+}
+
+#GRAD_CAM_BTN:checked:hover {
+    background-color: qlineargradient(
+        spread:pad,
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgb(253, 139, 139)
+        stop:1 rgb(130, 230, 255)
+    );
+}
+
+#DETECT_BTN {
+    background-color: rgb(0, 107, 30);
+    color: #ffffff;
+    border-radius: 10%;
+    border: none;
+    padding: 5px 20px;
+    font-size: 20px;
+    font-weight: 600;
+    font-family: Gill Sans, sans-serif;
+    letter-spacing: 1px;
+}
+
+#DETECT_BTN:hover {
+    background-color: rgb(0, 183, 119);
+ }
+
+#TUMOR_DETECTED {
+    color: rgb(255, 0, 0);
+}
+
+#TUMOR_DETECTED_IMAGE {
+    background-color: rgb(30, 18, 18);
+}
+
+#NO_TUMOR {
+    color: rgb(0, 187, 0);
+}
+
+#NO_TUMOR_IMAGE {
+    background-color: rgb(18, 32, 21);
+}
+
+#TITLE {
+    font-size: 66px;
+    font-weight: 700;
+    color: aliceblue;
+    font-family: Andale Mono, monospace;
+    letter-spacing: 4px;
+}
+
+#TUMOR_DETECTED_CELL {
+    color: rgb(255, 0, 0);
+    font-size: 12px;
+    font-family: Courier, monospace;
+    font-weight: 700;
+    width: 100%;    
+}
+
+#NO_TUMOR_CELL {
+    color: rgb(255, 0, 0);
+    font-size: 12px;
+    font-family: Courier, monospace;
+    font-weight: 700;
+    width: 100%;    
+}
