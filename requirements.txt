@@ -1,5 +1,4 @@
 keras==3.3.3
-matplotlib==3.8.4
 numpy==1.25.2
 opencv_python==4.8.1.78
 PyQt5==5.15.11

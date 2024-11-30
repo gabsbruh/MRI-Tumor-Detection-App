@@ -1,5 +1,11 @@
-# cache
-__pycache__
+# Ignore pycache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# vscode jsons, etc.
-.vscode
+# Ignore vscode files
+.vscode/
+.history/
+*.code-workspace
+

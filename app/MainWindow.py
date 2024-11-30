@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QStackedWidget, QMessageBox
 from PyQt5.QtGui import QIcon
 from app.MultipleDetection import MultipleDetection
-from app.StartWidget import Start
+from app.StartPage import StartPage
 from app.SingleDetection import SingleDetection
 
 class MainWindow(QMainWindow):
@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.stacked_widget)
         
         # Initialize widgets
-        self.start_page = Start(self.show_page)
+        self.start_page = StartPage(self.show_page)
         self.multi_page = MultipleDetection(self.show_page)
         self.single_page = SingleDetection(self.show_page)
         

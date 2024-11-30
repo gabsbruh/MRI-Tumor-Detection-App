@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QIcon, QImage
 from keras.models import load_model
-from script.grad_cam import GradCam
+from script.GradCAM import GradCAM
 from script.preprocess_input_custom import custom_preprocessing
 from keras.applications.vgg16 import preprocess_input as vgg16_preprocess_input
 
@@ -95,7 +95,7 @@ class BaseDetection(QWidget):
         self.load_model_()
         
         # after loading model, grad-cam alg can be initialized by composition
-        self.grad_cam_alg = GradCam(self.model)
+        self.grad_cam_alg = GradCAM(self.model)
         
         
         # connect buttons
@@ -156,53 +156,65 @@ class BaseDetection(QWidget):
                                                 )
         if filepath:
             try: 
-                image_pixmap = self.image_w_grad_original
-                if image_pixmap.save(filepath):
-                    QMessageBox.information(self, "Success", f"Image saved in {filepath}.")
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to save the image.")
-            except AttributeError:
+                image_bgr = cv2.cvtColor(self.image_w_grad_original, cv2.COLOR_RGB2BGR)
+                cv2.imwrite(filepath, image_bgr)
+                QMessageBox.information(self, "Success", f"Image saved in {filepath}.")
+            except Exception as e:
                 try: 
                     image_pixmap = self.original_image
                     if image_pixmap.save(filepath):
                         QMessageBox.information(self, "Success", f"Image saved in {filepath}.")
                     else:
-                        QMessageBox.warning(self, "Error", "Failed to save the image.")
-                except AttributeError:
+                        QMessageBox.warning(self, "Error", f"An error occured: {e}")
+                except AttributeError as e:
                     # if method pixmap returns nonetype
-                    QMessageBox.warning(self, "Error", "No image loaded.")
+                    QMessageBox.warning(self, "Error", f"An error occured: {e}")
+                    return None
         else:
             QMessageBox.warning(self, "No directory chosen", "Choose directory")
             return None            
             
     def preprocess_image(self, image, reversed_=False):
-        """resize and prepare image for predict. 
+        """
+        Resize and prepare image for prediction or reverse the process for display.
+
         Args:
-            image (ndarray(uint8)): image to be preprocessed
-            reversed_: if True, scenario which takes img as numpy ndarray and makes it qimage (backwards). Default to False
+            image (ndarray or QImage): The image to preprocess.
+            reversed_ (bool): If True, convert the image back for display.
+
         Returns:
-            ndarray(float32): preprocessed image as ready input to the model
+            ndarray or QImage: Preprocessed image or reversed QImage.
         """
         if reversed_:
-            # Convert NumPy ndarray to QPixmap-compatible QImage
-            img = (image * 255).astype(np.uint8)  # Scale to 0-255 and convert to uint8
-            _, h, w, c = img.shape
-            bytes_per_line = 3 * w
-            q_image = QImage(img.data, w, h, bytes_per_line, QImage.Format_RGB888)
-            return q_image
-        
-        if self.model_is_default:
-            image_resized = cv2.resize(image, (224, 224))
-            image_as_array = np.array(image_resized)
-            image_preprocessed = vgg16_preprocess_input(image_as_array)
-            image_preprocessed = np.expand_dims(image_preprocessed, axis=0)
-            return image_preprocessed
+            if len(image.shape) == 3:  # Handle (height, width, channels) format
+                h, w, c = image.shape
+                image = np.clip(image, 0, 255).astype(np.uint8)  # Ensure valid pixel range
+                bytes_per_line = 3 * w
+                q_image = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                return q_image
+            elif len(image.shape) == 4:  # Handle (batch, height, width, channels)
+                _, h, w, c = image.shape
+                image = (image[0] * 255).astype(np.uint8)  # Remove batch dimension
+                bytes_per_line = 3 * w
+                q_image = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                return q_image
+            else:
+                raise ValueError("Unsupported image shape for reversed operation.")
         else:
-            image_preprocessed = custom_preprocessing(image)
-            return image_preprocessed
+            if self.model_is_default:
+                image_resized = cv2.resize(image, (224, 224))
+                image_as_array = np.array(image_resized)
+                image_preprocessed = vgg16_preprocess_input(image_as_array)
+                image_preprocessed = np.expand_dims(image_preprocessed, axis=0)  # Add batch dimension
+                return image_preprocessed
+            else:
+                image_preprocessed = custom_preprocessing(image)
+                return image_preprocessed
                 
     def apply_grad_cam(self, checked):
-        raise NotImplementedError("Apply grad cam to the image")
+        """Prebuilt method for grad_cam optional
+        """
+        pass
     
     def setup_interface(self):
         raise NotImplementedError("Organize layout of widgets")

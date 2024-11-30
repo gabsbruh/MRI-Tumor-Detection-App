@@ -101,7 +101,11 @@ class MultipleDetection(BaseDetection):
         self.images_path = QFileDialog.getExistingDirectory()
         extensions = ['.png', '.jpg', '.jpeg', '.svg', '.bmp']
         # list path names of every image inside the directory
-        self.filenames = filter_(listdir(self.images_path), extensions)
+        try:
+            self.filenames = filter_(listdir(self.images_path), extensions)
+        except FileNotFoundError:
+            QMessageBox.warning(self, "No path provided", "No path provided")
+            return None
         if not self.filenames:
             QMessageBox.warning(self, "No Images", "No images in directory.")
             return None            

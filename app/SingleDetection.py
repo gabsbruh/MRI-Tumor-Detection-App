@@ -17,6 +17,7 @@ class SingleDetection(BaseDetection):
         self.img_path = ""
         self.original_image = None
         self.image_w_grad_original = None
+        self.detection_result = None
         
         # unique widgets  
         self.result = QLabel("Detection Results", alignment=Qt.AlignCenter)
@@ -72,8 +73,10 @@ class SingleDetection(BaseDetection):
             "Image Files (*.png *.jpg *.jpeg *.svg *.bmp)"
         )
         if self.img_path:
-            # set detection results to default
+            # reset buttons and variables to default
+            self.grad_cam.setChecked(False)
             self.result.setText("Detection Results")
+            self.detection_result = None
             # set image and resize properly to display
             self.original_image = cv2.imread(self.img_path) # cv2.imread to load original image
             pixmap = QPixmap(self.img_path)
@@ -108,10 +111,12 @@ class SingleDetection(BaseDetection):
         preprocessed_img = self.preprocess_image(self.original_image)
         output = self.model.predict(preprocessed_img)
         if np.argmax(output) == 1:
+            self.detection_result = 1
             self.result.setText("DETECTED")
             self.result.setObjectName("TUMOR_DETECTED")
             self.image.setObjectName("TUMOR_DETECTED_IMAGE")
         else:
+            self.detection_result = 0
             self.result.setText("No Tumor")
             self.result.setObjectName("NO_TUMOR")
             self.image.setObjectName("NO_TUMOR_IMAGE")
@@ -120,22 +125,30 @@ class SingleDetection(BaseDetection):
         self.style().polish(self.image)
     
     def apply_grad_cam(self, checked):
+        if self.original_image is None:
+            QMessageBox.warning(self, "Load Image", "Load an image before applying Grad-CAM.")
+            return
+        
+        if self.detection_result is None:
+            self.grad_cam.setChecked(False)    
+            QMessageBox.warning(self, "Detect Tumor", "Use 'Detect' button to detect tumor first.")
+            return None
+
         if checked:
-            preprocessed_img = self.preprocess_image(self.original_image)
-            heatmap = self.grad_cam_alg.compute_heatmap(preprocessed_img,  class_idx=0)
-            self.image_w_grad_original = self.grad_cam_alg.overlay_heatmap(heatmap, preprocessed_img)
-            repreprocessed_img = self.preprocess_image(self.image_w_grad_original, reversed_=True)
-            self.image_w_grad_original = repreprocessed_img
-            pixmap_grad = QPixmap(repreprocessed_img)
+            # use grad cam class for getting image with cnn's activation areas applied
+            overlay_image = self.grad_cam_alg.create_gradcam_image(self.img_path, class_index=self.detection_result)
+            self.image_w_grad_original = overlay_image
+            overlayed_qimage = self.preprocess_image(self.image_w_grad_original, reversed_=True)
+            pixmap_grad = QPixmap(overlayed_qimage)
             if pixmap_grad.isNull():
-                QMessageBox.critical(self, "Image Error", "Transition to grad failed.")
-                return None
+                QMessageBox.critical(self, "Image Error", "Transition to Grad-CAM failed.")
+                return
             scale_pixmap_grad = pixmap_grad.scaledToHeight(480, Qt.SmoothTransformation)
             self.image.setPixmap(scale_pixmap_grad)
         else:
             pixmap = QPixmap(self.img_path)
             if pixmap.isNull():
-                QMessageBox.critical(self, "Image Error", "Image not loaded properly. Check extension")
-                return None
+                QMessageBox.critical(self, "Image Error", "Image not loaded properly. Check the extension.")
+                return
             scale_pixmap = pixmap.scaledToHeight(480, Qt.SmoothTransformation)
             self.image.setPixmap(scale_pixmap)

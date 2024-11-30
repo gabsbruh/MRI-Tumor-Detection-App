@@ -1,0 +1,9 @@
+pytest
+pytest-mock
+pytest-qt
+selenium
+PyQt5
+tensorflow
+keras
+opencv-python
+numpy
