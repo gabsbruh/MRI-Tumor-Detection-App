@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap
 from app.BaseDetection import BaseDetection
+### modules lazy-loaded
+# from script.GradCAM import GradCAM
 
 class SingleDetection(BaseDetection):
     def __init__(self, show_page_callback):
@@ -103,6 +105,9 @@ class SingleDetection(BaseDetection):
         in module script/preprocess_input_custom.py. Otherwise your model will take raw image,
         returning error (input type will be uint8 with shape:(xdim, ydim, 3))
         """
+        if self.model is None:
+            QMessageBox.information(self, "Model Loading", "Model are being loaded. When model info will appear, try again.")
+            return None
         if self.original_image is None:
             QMessageBox.warning(self, "Load Image", "Load image to use detect.")
             return None
@@ -133,6 +138,12 @@ class SingleDetection(BaseDetection):
             self.grad_cam.setChecked(False)    
             QMessageBox.warning(self, "Detect Tumor", "Use 'Detect' button to detect tumor first.")
             return None
+        
+        if self.grad_cam_alg is None:
+            # lazy-loading 
+            from script.GradCAM import GradCAM
+            # after loading model, grad-cam alg can be initialized by composition
+            self.grad_cam_alg = GradCAM(self.model)   
 
         if checked:
             # use grad cam class for getting image with cnn's activation areas applied

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.layers import Conv2D, SeparableConv2D
 
 class GradCAM():
@@ -56,7 +56,7 @@ class GradCAM():
         img = cv2.imread(image_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, target_size)
-        img = preprocess_input(img)  # Using preprocess_input from VGG16
+        img = preprocess_input(img)  # Using preprocess_input from EfficientNet
         return np.expand_dims(img, axis=0)
 
     def generate_heatmap(self, image, class_index):

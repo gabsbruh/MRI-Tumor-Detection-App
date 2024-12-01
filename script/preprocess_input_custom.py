@@ -1,9 +1,10 @@
 import numpy as np
+import cv2
 from typing import Tuple
 
 # import modules heere:
 ########## MODULES ###########
-
+from keras.applications.vgg16 import preprocess_input
 ########## ENDMODULES ###########
 
 # decorator for checking input and output dimensions, type
@@ -34,8 +35,11 @@ def handle_io_type(func):
 ########## CODE ###########
 
 def custom_preprocessing(image):
-    preprocessed_image = image
-    return preprocessed_image
+    image_resized = cv2.resize(image, (224, 224))
+    image_as_array = np.array(image_resized)
+    image_preprocessed = preprocess_input(image_as_array)
+    image_preprocessed = np.expand_dims(image_preprocessed, axis=0)  # Add batch dimension
+    return image_preprocessed
 
 ########## ENDCODE ########### 
 

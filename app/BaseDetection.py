@@ -1,16 +1,18 @@
 import cv2
 import numpy as np
-from PyQt5.Qt import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QLabel, 
     QVBoxLayout, QFileDialog, QLineEdit,
     QMessageBox
 )
 from PyQt5.QtGui import QIcon, QImage
-from keras.models import load_model
-from script.GradCAM import GradCAM
-from script.preprocess_input_custom import custom_preprocessing
-from keras.applications.vgg16 import preprocess_input as vgg16_preprocess_input
+from threading import Thread
+### modules lazy-loaded
+# from keras.models import load_model
+# from keras.applications.efficientnet import preprocess_input as efficientnet_preprocess_input
+# from script.preprocess_input_custom import custom_preprocessing
+
 
 class BaseDetection(QWidget):
     """instances:
@@ -36,6 +38,8 @@ class BaseDetection(QWidget):
             save_image: saves image with grad-cam
             preprocess_image: Preprocess image for model predicting
     """
+    # singals are defined or class level
+    update_model_info = pyqtSignal(str)
     
     def __init__(self, show_page_callback):
         super().__init__()
@@ -44,7 +48,7 @@ class BaseDetection(QWidget):
         self.show_page = show_page_callback
         
         # info about model - double-rowed qlabel
-        self.model_info = QLabel(alignment=Qt.AlignCenter)
+        self.model_info = QLabel("model is loading...", alignment=Qt.AlignCenter)
         self.model_info.setFixedHeight(40)
         
         # icon
@@ -89,14 +93,12 @@ class BaseDetection(QWidget):
         self.original_image = None 
         self.image_w_grad_original = None
         
+        # grad cam alg
+        self.grad_cam_alg = None
+        
         # load CNN model
         self.model_is_default = None
         self.model = None
-        self.load_model_()
-        
-        # after loading model, grad-cam alg can be initialized by composition
-        self.grad_cam_alg = GradCAM(self.model)
-        
         
         # connect buttons
         self.browser.clicked.connect(self.browse_for_img)
@@ -105,6 +107,16 @@ class BaseDetection(QWidget):
         self.grad_cam.toggled.connect(self.apply_grad_cam)
         self.save_grad.clicked.connect(self.save_image)
         self.detect.clicked.connect(self.detect_tumor)
+        self.update_model_info.connect(self.update_model_info_label)
+        
+    def lazy_loading(self):
+        """Few modules are time-consuming to load. load them when they are needed.
+        """
+        def start_loading():
+            # lazy-loading process of loading model
+            from keras.models import load_model
+            self.load_model_()  
+        Thread(target=start_loading, daemon=True).start()        
     
     def load_model_(self, default_model=True):
         """
@@ -115,18 +127,19 @@ class BaseDetection(QWidget):
         Returns:
             NoneType: return None if an error occur.
         """
+        # lazy-loading
+        from keras.models import load_model
         model_info_func = lambda mt, mn: ("<html><body>"
                                           f"<p style='font-size:12px;margin:0;'>model: {mt},</p>"
                                           f"<p style='margin:0;'>{mn}</p>"
                                           "</body></html>")
         if  default_model:
-            self.model = load_model("models/VGG_16.keras")
+            self.model = load_model("models/EfficientNet.keras", compile=False)
             model_type = 'default'
-            model_name = 'VGG-16'
+            model_name = 'EfficientNet'
             self.model_is_default = True
         
         else:
-            self.model_is_default = False
             options = QFileDialog.Options()
             filepath, _ = QFileDialog.getOpenFileName(self, 
                                                 "Select file", "", 
@@ -134,6 +147,7 @@ class BaseDetection(QWidget):
                                                 options=options)
             if filepath:
                 try:
+                    self.model_is_default = False
                     self.model = load_model(filepath)
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Could not load model: {e}")
@@ -144,7 +158,11 @@ class BaseDetection(QWidget):
             else:
                 QMessageBox.warning(self, "No file chosen", "Choose '.h5' or '.keras.' file.")
                 return None
-        self.model_info.setText(model_info_func(model_type, model_name))
+        self.update_model_info.emit(model_info_func(model_type, model_name))
+    
+    def update_model_info_label(self, text):
+        """Update text in model_info label. Func is required due to model loading"""
+        self.model_info.setText(text)
     
     def save_image(self):
         """save image which is currently displayed
@@ -202,13 +220,20 @@ class BaseDetection(QWidget):
                 raise ValueError("Unsupported image shape for reversed operation.")
         else:
             if self.model_is_default:
+                # lazy-loading of preprocessing
+                from keras.applications.efficientnet import preprocess_input as efficientnet_preprocess_input
                 image_resized = cv2.resize(image, (224, 224))
                 image_as_array = np.array(image_resized)
-                image_preprocessed = vgg16_preprocess_input(image_as_array)
+                image_preprocessed = efficientnet_preprocess_input(image_as_array)
                 image_preprocessed = np.expand_dims(image_preprocessed, axis=0)  # Add batch dimension
                 return image_preprocessed
             else:
-                image_preprocessed = custom_preprocessing(image)
+                try:
+                    # lazy-loading of custom-preprocessing
+                    from script.preprocess_input_custom import custom_preprocessing
+                    image_preprocessed = custom_preprocessing(image)
+                except Exception as e:
+                    QMessageBox.critical(self, "Preprocess func error", f"Custom preprocessing failed: {e}")
                 return image_preprocessed
                 
     def apply_grad_cam(self, checked):

@@ -4,6 +4,7 @@ from PyQt5.QtGui import QIcon
 from app.MultipleDetection import MultipleDetection
 from app.StartPage import StartPage
 from app.SingleDetection import SingleDetection
+from app.BaseDetection import BaseDetection
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -35,6 +36,10 @@ class MainWindow(QMainWindow):
         # load stylesheet
         self.load_stylesheet(path="static/css/styles.css")
         
+        self.show()
+
+        
+        
     def show_page(self, page_name):
         """Switch trough different QWidgets in main widget (QStackedWidget) by setting widget button reffering
         to with its class name (in variable page_name). Then change also css styling of background based on property name
@@ -45,9 +50,11 @@ class MainWindow(QMainWindow):
         elif page_name == "MultiPage":
             self.stacked_widget.setCurrentWidget(self.multi_page)
             self.setProperty("class", "default_widget")
+            self.multi_page.lazy_loading()
         elif page_name == "SinglePage":
             self.stacked_widget.setCurrentWidget(self.single_page)
             self.setProperty("class", "default_widget")
+            self.single_page.lazy_loading()
         else:
             QMessageBox.warning(self, "Redirection Error", "An error during redirection occured.")
             return
