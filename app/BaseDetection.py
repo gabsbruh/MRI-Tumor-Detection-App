@@ -1,5 +1,3 @@
-import cv2
-import numpy as np
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QLabel, 
@@ -7,6 +5,18 @@ from PyQt5.QtWidgets import (
     QMessageBox
 )
 from PyQt5.QtGui import QIcon, QImage
+# import functions one by one to prevent import whole library (reduce size of .exe)
+from cv2 import (
+    resize as cv2_resize,
+    cvtColor as cv2_cvtColor,
+    COLOR_RGB2BGR as cv2_COLOR_RGB2BGR,
+)
+from numpy import (
+    clip as np_clip,
+    uint8 as np_uint8,
+    array as np_array,
+    expand_dims as np_expand_dims
+)
 from threading import Thread
 ### modules lazy-loaded
 # from keras.models import load_model
@@ -140,6 +150,7 @@ class BaseDetection(QWidget):
             self.model_is_default = True
         
         else:
+            self.model_info.setText("model is loading...")
             options = QFileDialog.Options()
             filepath, _ = QFileDialog.getOpenFileName(self, 
                                                 "Select file", "", 
@@ -148,7 +159,7 @@ class BaseDetection(QWidget):
             if filepath:
                 try:
                     self.model_is_default = False
-                    self.model = load_model(filepath)
+                    self.model = load_model(filepath, compile=False)
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Could not load model: {e}")
                     return None
@@ -174,8 +185,8 @@ class BaseDetection(QWidget):
                                                 )
         if filepath:
             try: 
-                image_bgr = cv2.cvtColor(self.image_w_grad_original, cv2.COLOR_RGB2BGR)
-                cv2.imwrite(filepath, image_bgr)
+                image_bgr = cv2_cvtColor(self.image_w_grad_original, cv2_COLOR_RGB2BGR)
+                cv2_imwrite(filepath, image_bgr)
                 QMessageBox.information(self, "Success", f"Image saved in {filepath}.")
             except Exception as e:
                 try: 
@@ -206,13 +217,13 @@ class BaseDetection(QWidget):
         if reversed_:
             if len(image.shape) == 3:  # Handle (height, width, channels) format
                 h, w, c = image.shape
-                image = np.clip(image, 0, 255).astype(np.uint8)  # Ensure valid pixel range
+                image = np_clip(image, 0, 255).astype(np_uint8)  # Ensure valid pixel range
                 bytes_per_line = 3 * w
                 q_image = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
                 return q_image
             elif len(image.shape) == 4:  # Handle (batch, height, width, channels)
                 _, h, w, c = image.shape
-                image = (image[0] * 255).astype(np.uint8)  # Remove batch dimension
+                image = (image[0] * 255).astype(np_uint8)  # Remove batch dimension
                 bytes_per_line = 3 * w
                 q_image = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
                 return q_image
@@ -222,10 +233,10 @@ class BaseDetection(QWidget):
             if self.model_is_default:
                 # lazy-loading of preprocessing
                 from keras.applications.efficientnet import preprocess_input as efficientnet_preprocess_input
-                image_resized = cv2.resize(image, (224, 224))
-                image_as_array = np.array(image_resized)
+                image_resized = cv2_resize(image, (224, 224))
+                image_as_array = np_array(image_resized)
                 image_preprocessed = efficientnet_preprocess_input(image_as_array)
-                image_preprocessed = np.expand_dims(image_preprocessed, axis=0)  # Add batch dimension
+                image_preprocessed = np_expand_dims(image_preprocessed, axis=0)  # Add batch dimension
                 return image_preprocessed
             else:
                 try:

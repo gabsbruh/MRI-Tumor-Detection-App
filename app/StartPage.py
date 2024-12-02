@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QSpacerItem
 )
 
+
 class StartPage(QWidget):
     def __init__(self, show_page_callback):
         super().__init__()

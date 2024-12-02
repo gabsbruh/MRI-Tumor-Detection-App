@@ -1,5 +1,3 @@
-import cv2
-import numpy as np
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, 
@@ -8,8 +6,12 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap
 from app.BaseDetection import BaseDetection
+# import functions one by one to prevent import whole library (reduce size of .exe)
+from cv2 import imread as cv2_imread
+from numpy import argmax as np_argmax
 ### modules lazy-loaded
 # from script.GradCAM import GradCAM
+
 
 class SingleDetection(BaseDetection):
     def __init__(self, show_page_callback):
@@ -80,7 +82,7 @@ class SingleDetection(BaseDetection):
             self.result.setText("Detection Results")
             self.detection_result = None
             # set image and resize properly to display
-            self.original_image = cv2.imread(self.img_path) # cv2.imread to load original image
+            self.original_image = cv2_imread(self.img_path) # cv2.imread to load original image
             pixmap = QPixmap(self.img_path)
             if pixmap.isNull():
                 QMessageBox.critical(self, "Image Error", "Image not loaded properly. Check extension")
@@ -115,7 +117,7 @@ class SingleDetection(BaseDetection):
         self.result.update()
         preprocessed_img = self.preprocess_image(self.original_image)
         output = self.model.predict(preprocessed_img)
-        if np.argmax(output) == 1:
+        if np_argmax(output) == 1:
             self.detection_result = 1
             self.result.setText("DETECTED")
             self.result.setObjectName("TUMOR_DETECTED")

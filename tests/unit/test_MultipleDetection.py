@@ -1,8 +1,11 @@
 from app.MultipleDetection import MultipleDetection
+from PyQt5.QtWidgets import QApplication
+
+app = QApplication([])
 
 def test_browse_for_images(mocker):
     md = MultipleDetection(None)
-    mocker.patch('app.MultipleDetection.QFileDialog.getExistingDirectory', return_value="/test/path")
+    mocker.patch('app.MultipleDetection.QFileDialog.getExistingDirectory', return_value="../../archive/test/")
     mocker.patch('os.listdir', return_value=["image1.jpg", "image2.jpg"])
     md.browse_for_img()
     assert len(md.filenames) == 2

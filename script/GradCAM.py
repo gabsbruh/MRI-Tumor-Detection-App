@@ -1,9 +1,25 @@
-import cv2
-import numpy as np
-import tensorflow as tf
+from cv2 import (
+    imread as cv2_imread,
+    cvtColor as cv2_cvtColor,
+    resize as cv2_resize,
+    COLOR_BGR2RGB as cv2_COLOR_BGR2RGB,
+    COLORMAP_JET as cv2_COLORMAP_JET,
+    applyColorMap as cv2_applyColorMap,
+    addWeighted as cv2_addWeighted
+)
+from numpy import (
+    expand_dims as np_expand_dims,
+    uint8 as np_uint8,
+    dot as np_dot,
+    maximum as np_maximum,
+    max as np_max
+)
 from tensorflow.keras.models import Model
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.layers import Conv2D, SeparableConv2D
+from keras.activations import softmax as keras_activations_softmax
+from tensorflow import GradientTape as tf_GradientTape
+from tensorflow import reduce_mean as tf_reduce_mean
 
 class GradCAM():
     def __init__(self, model):
@@ -39,7 +55,7 @@ class GradCAM():
 
     def _disable_softmax(self):
         """Disable the softmax activation in the last layer."""
-        if hasattr(self.model.layers[-1], "activation") and self.model.layers[-1].activation == tf.keras.activations.softmax:
+        if hasattr(self.model.layers[-1], "activation") and self.model.layers[-1].activation == keras_activations_softmax:
             self.model.layers[-1].activation = None
 
     def preprocess_image(self, image_path, target_size=(224, 224)):
@@ -53,11 +69,11 @@ class GradCAM():
         Returns:
             np.ndarray: Preprocessed image ready for the model.
         """
-        img = cv2.imread(image_path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, target_size)
+        img = cv2_imread(image_path)
+        img = cv2_cvtColor(img, cv2_COLOR_BGR2RGB)
+        img = cv2_resize(img, target_size)
         img = preprocess_input(img)  # Using preprocess_input from EfficientNet
-        return np.expand_dims(img, axis=0)
+        return np_expand_dims(img, axis=0)
 
     def generate_heatmap(self, image, class_index):
         """
@@ -78,22 +94,22 @@ class GradCAM():
             ]
         )
         
-        with tf.GradientTape() as tape:
+        with tf_GradientTape() as tape:
             conv_outputs, predictions = grad_model(image)
             loss = predictions[:, class_index]
 
         grads = tape.gradient(loss, conv_outputs)
-        pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+        pooled_grads = tf_reduce_mean(grads, axis=(0, 1, 2))
 
         conv_outputs = conv_outputs[0]
-        heatmap = np.dot(conv_outputs, pooled_grads.numpy())
-        heatmap = np.maximum(heatmap, 0)  # ReLU
-        if np.max(heatmap) > 0:
-            heatmap /= np.max(heatmap)  # Normalization
+        heatmap = np_dot(conv_outputs, pooled_grads.numpy())
+        heatmap = np_maximum(heatmap, 0)  # ReLU
+        if np_max(heatmap) > 0:
+            heatmap /= np_max(heatmap)  # Normalization
 
         return heatmap
 
-    def overlay_heatmap(self, heatmap, original_image_path, alpha=0.4, colormap=cv2.COLORMAP_JET):
+    def overlay_heatmap(self, heatmap, original_image_path, alpha=0.4, colormap=cv2_COLORMAP_JET):
         """
         Overlay the heatmap on the original image.
 
@@ -106,15 +122,15 @@ class GradCAM():
         Returns:
             np.ndarray: Image with the heatmap overlay.
         """
-        original_image = cv2.imread(original_image_path)
-        original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
+        original_image = cv2_imread(original_image_path)
+        original_image = cv2_cvtColor(original_image, cv2_COLOR_BGR2RGB)
 
-        heatmap_resized = cv2.resize(heatmap, (original_image.shape[1], original_image.shape[0]))
+        heatmap_resized = cv2_resize(heatmap, (original_image.shape[1], original_image.shape[0]))
         heatmap_resized = 1 - heatmap_resized
-        heatmap_resized = np.uint8(255 * heatmap_resized)
-        heatmap_colored = cv2.applyColorMap(heatmap_resized, colormap)
+        heatmap_resized = np_uint8(255 * heatmap_resized)
+        heatmap_colored = cv2_applyColorMap(heatmap_resized, colormap)
 
-        overlayed_image = cv2.addWeighted(original_image, 1 - alpha, heatmap_colored, alpha, 0)
+        overlayed_image = cv2_addWeighted(original_image, 1 - alpha, heatmap_colored, alpha, 0)
         return overlayed_image
 
     def create_gradcam_image(self, image_path, class_index=1):

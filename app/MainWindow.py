@@ -6,6 +6,7 @@ from app.StartPage import StartPage
 from app.SingleDetection import SingleDetection
 from app.BaseDetection import BaseDetection
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -37,8 +38,6 @@ class MainWindow(QMainWindow):
         self.load_stylesheet(path="static/css/styles.css")
         
         self.show()
-
-        
         
     def show_page(self, page_name):
         """Switch trough different QWidgets in main widget (QStackedWidget) by setting widget button reffering
@@ -64,4 +63,3 @@ class MainWindow(QMainWindow):
         with open(path, 'r') as f:
             styles = f.read()
             self.setStyleSheet(styles)
-    

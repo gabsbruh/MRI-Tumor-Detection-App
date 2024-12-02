@@ -1,5 +1,8 @@
 from app.SingleDetection import SingleDetection
 import numpy as np
+from PyQt5.QtWidgets import QApplication
+
+app = QApplication([])
 
 def test_integration_single_detection(mocker):
     sd = SingleDetection(None)

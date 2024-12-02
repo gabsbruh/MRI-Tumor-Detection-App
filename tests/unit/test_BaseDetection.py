@@ -1,6 +1,9 @@
 import pytest
 from app.BaseDetection import BaseDetection
 import numpy as np
+from PyQt5.QtWidgets import QApplication
+
+app = QApplication([])
 
 def test_load_default_model():
     bd = BaseDetection(None)

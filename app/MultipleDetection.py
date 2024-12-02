@@ -1,7 +1,3 @@
-import numpy as np
-import cv2
-import csv
-from os import listdir, path
 from app.BaseDetection import BaseDetection
 from app.ImageViewer import ImageViewer
 from PyQt5.QtCore import Qt
@@ -12,6 +8,15 @@ from PyQt5.QtWidgets import (
     QPushButton, QFileDialog
 )
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QColor
+# import functions one by one to prevent import whole library (reduce size of .exe)
+from numpy import argmax as np_argmax
+from cv2 import imread as cv2_imread
+from csv import writer as csv_writer
+from os import (
+    listdir as os_listdir, 
+    path as os_path
+)
+
 
 class MultipleDetection(BaseDetection):
     def __init__(self, show_page_callback):
@@ -81,6 +86,7 @@ class MultipleDetection(BaseDetection):
         self.setLayout(self.master_layout)
 
     def set_table_view(self):
+        "refresh table when anything changes manually"
         self.table_model.setHorizontalHeaderLabels(["File Name", "Detection Result"])
         self.table.setColumnWidth(0, 600)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -102,7 +108,7 @@ class MultipleDetection(BaseDetection):
         extensions = ['.png', '.jpg', '.jpeg', '.svg', '.bmp']
         # list path names of every image inside the directory
         try:
-            self.filenames = filter_(listdir(self.images_path), extensions)
+            self.filenames = filter_(os_listdir(self.images_path), extensions)
         except FileNotFoundError:
             QMessageBox.warning(self, "No path provided", "No path provided")
             return None
@@ -128,24 +134,26 @@ class MultipleDetection(BaseDetection):
             return None
 
     def detect_tumor(self):
+        if self.model is None:
+            QMessageBox.information(self, "Model Loading", "Model are being loaded. When model info will appear, try again.")
+            return None
         # counter for final result info
         num_of_detections = 0
         num_of_files = len(self.filenames)
         self.result.setText("Detecting...")
         for idx in range(num_of_files):
-            curr_directory = path.join(self.images_path, self.filenames[idx])
-            curr_image = cv2.imread(curr_directory)
+            curr_directory = os_path.join(self.images_path, self.filenames[idx])
+            curr_image = cv2_imread(curr_directory)
             # preprocess loaded image
             prep_curr_image = self.preprocess_image(curr_image)
             # model classifies image
             output = self.model.predict(prep_curr_image)
-            if np.argmax(output) == 1:
+            if np_argmax(output) == 1:
                 num_of_detections += 1
                 item = QStandardItem("DETECTED")
                 # qstandarditem cannot be modified by css styling, so
                 # it's needed to do it manually
-                item.setForeground(QColor(255, 0, 0)) 
-                
+                item.setForeground(QColor(255, 0, 0))
             else:
                 item = QStandardItem("No Tumor")
                 # qstandarditem cannot be modified by css styling, so
@@ -169,7 +177,7 @@ class MultipleDetection(BaseDetection):
                                                   "CSV Files (*.csv)")
         if filepath:
             with open(filepath, 'w', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
+                writer = csv_writer(file)
                 # get lengths of table
                 rows = self.table_model.rowCount()
                 cols = self.table_model.columnCount()
@@ -199,9 +207,6 @@ class MultipleDetection(BaseDetection):
             QMessageBox.warning(self, "No Directory Chosen", "To save as .csv, choose Directory.")
             return None
     
-    def apply_grad_cam(self):
-        pass
-    
     def show_image(self):
         selected_indexes = self.table.selectedIndexes()
         # prevent displaying too much
@@ -209,10 +214,8 @@ class MultipleDetection(BaseDetection):
             for idx in selected_indexes:
                 num = idx.row()
                 filename = self.filenames[num]
-                full_path = path.join(self.images_path, filename)
+                full_path = os_path.join(self.images_path, filename)
                 image_viewer = ImageViewer(full_path)
                 self.image_viewer_refs.append(image_viewer)
-
         else:
             QMessageBox.information(self, "Too much cells", "Choose up to 10 cells.")
-            

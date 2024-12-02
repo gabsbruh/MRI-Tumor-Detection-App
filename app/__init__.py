@@ -1,0 +1,1 @@
+# initialize 'app' to provide treating folder as library by python modules

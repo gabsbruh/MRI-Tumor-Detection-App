@@ -9,3 +9,5 @@ __pycache__/
 .history/
 *.code-workspace
 
+# Ignore pytest files
+.pytest_cache/
